@@ -19,7 +19,6 @@ layout(location = 3) in vec4 inUp;
 layout(location = 0) out vec4 outV0;
 layout(location = 1) out vec4 outV1;
 layout(location = 2) out vec4 outV2;
-//layout(location = 0) out vec4 outV0;
 
 
 out gl_PerVertex {
@@ -27,11 +26,15 @@ out gl_PerVertex {
 };
 
 void main() {
-	// TODO: Write gl_Position and any other shader outputs
+    // Transform to World space
+    outV0 = model * vec4(inV0.xyz, 1.0);
+    outV1 = model * vec4(inV1.xyz, 1.0);
+    outV2 = model * vec4(inV2.xyz, 1.0);
 
-    outV0 = camera.proj * camera.view * model * vec4(inV0.xyz, 1.0);
-    outV1 = camera.proj * camera.view * model * vec4(inV1.xyz, 1.0);
-    outV2 = camera.proj * camera.view * model * vec4(inV2.xyz, 1.0);
+    // Pass secondary attributes as well
+    outV0.w = inV0.w;
+    outV1.w = inV1.w;
+    outV2.w = inV2.w;
 
-    gl_Position = outV0;
+    gl_Position = model * vec4(outV0.xyz, 1.0);
 }

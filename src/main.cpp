@@ -130,7 +130,6 @@ int main() {
     plane->SetTexture(grassImage);
     
     Blades* blades = new Blades(device, transferCommandPool, planeDim);
-    blades->SetTexture(grassImage); // TEMP
 
     vkDestroyCommandPool(device->GetVkDevice(), transferCommandPool, nullptr);
 
