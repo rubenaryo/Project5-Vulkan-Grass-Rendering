@@ -14,6 +14,7 @@ layout(location = 0) out vec4 outColor;
 void main() {
     // TODO: Compute fragment color
 
-    const vec4 GREEN = vec4(0.24, 0.61, 0.09, 1.0);
-    outColor = vec4(inNormal.xyz, 1.0);
+    const vec3 GREEN = vec3(0.24, 0.61, 0.09);
+    const vec3 norColor = inNormal.xyz * 0.5 + 0.5;
+    outColor = vec4(norColor.rgb, 1.0);
 }

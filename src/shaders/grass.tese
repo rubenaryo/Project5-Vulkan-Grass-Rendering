@@ -12,7 +12,7 @@ layout(location = 0) in vec4[] inV0;
 layout(location = 1) in vec4[] inV1;
 layout(location = 2) in vec4[] inV2;
 
-layout(location = 0) out vec4[] outNormal;
+layout(location = 0) out vec4 outNormal;
 
 void main() {
     float u = gl_TessCoord.x;
@@ -44,8 +44,8 @@ void main() {
 
     vec3 p = mix(c0, c1, t);
 
-    vec3 nor = normalize(cross((v0 - v1), t1));
+    vec3 nor = normalize(cross(v0-v1, t1));
 
-    outNormal[0] = camera.proj * camera.view * vec4(nor, 0.0);
+    outNormal = vec4(nor, 0.0);
     gl_Position = camera.proj * camera.view * vec4(p, 1.0);
 }
