@@ -464,9 +464,9 @@ void Renderer::CreateComputeDescriptorSets() {
     {
         descriptorWrites[NUM_BUFFERS * i + offset].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[NUM_BUFFERS * i + offset].dstSet = computeDescriptorSets[i];
-        descriptorWrites[NUM_BUFFERS * i + offset].dstBinding = 0;
+        descriptorWrites[NUM_BUFFERS * i + offset].dstBinding = offset;
         descriptorWrites[NUM_BUFFERS * i + offset].dstArrayElement = 0;
-        descriptorWrites[NUM_BUFFERS * i + offset].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[NUM_BUFFERS * i + offset].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         descriptorWrites[NUM_BUFFERS * i + offset].descriptorCount = 1;
         descriptorWrites[NUM_BUFFERS * i + offset].pBufferInfo = pBufferInfo;
         descriptorWrites[NUM_BUFFERS * i + offset].pImageInfo = nullptr;
@@ -496,6 +496,9 @@ void Renderer::CreateComputeDescriptorSets() {
         PopulateDescriptorWrite(i, 1, &culledBladesBufferInfo);
         PopulateDescriptorWrite(i, 2, &numBladesBufferInfo);
     }
+
+    // Update descriptor sets
+    vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Renderer::CreateGraphicsPipeline() {
@@ -1019,7 +1022,13 @@ void Renderer::RecordComputeCommandBuffer() {
     // Bind descriptor set for time uniforms
     vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 1, 1, &timeDescriptorSet, 0, nullptr);
 
-    // TODO: For each group of blades bind its descriptor set and dispatch
+    // For each group of blades bind its descriptor set and dispatch
+    for (int i = 0; i != grassDescriptorSets.size(); ++i)
+    {
+        vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 2, 1, &computeDescriptorSets[i], 0, nullptr);
+        unsigned int wgDimX = (NUM_BLADES + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE; // divUp
+        vkCmdDispatch(computeCommandBuffer, wgDimX, 1, 1);
+    }
 
     // ~ End recording ~
     if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS) {
@@ -1079,7 +1088,7 @@ void Renderer::RecordCommandBuffers() {
             barriers[j].size = sizeof(BladeDrawIndirect);
         }
 
-        vkCmdPipelineBarrier(commandBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, barriers.size(), barriers.data(), 0, nullptr);
+        vkCmdPipelineBarrier(commandBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, (uint32_t)barriers.size(), barriers.data(), 0, nullptr);
 
         // Bind the camera descriptor set. This is set 0 in all pipelines so it will be inherited
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &cameraDescriptorSet, 0, nullptr);
