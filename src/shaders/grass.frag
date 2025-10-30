@@ -20,7 +20,6 @@ void main()
     const float AMBIENT_STRENGTH = 0.65;
     
     const vec3 GREEN = vec3(0.24, 0.61, 0.09);
-    
     vec3 normal = normalize(inNormal.xyz);
     
     float lambert = max(dot(normal, SUNLIGHT_DIR), 0.0);
