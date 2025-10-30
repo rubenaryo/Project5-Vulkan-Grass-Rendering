@@ -144,8 +144,60 @@ void applyForces(in out Blade blade)
     blade.v2.xyz = v2;
 }
 
+bool clipDiscard(vec3 ndc)
+{
+    return ndc.x < -1.0 || ndc.x > 1.0 ||
+           ndc.y < -1.0 || ndc.y > 1.0 ||
+           ndc.z <  0.0 || ndc.z > 1.0;
+}
+
 bool cullBlade(Blade blade)
 {
+    mat4 invView = inverse(camera.view);
+    vec4 camPos = invView * vec4(0,0,0,1);
+    vec3 fromCam = blade.v0.xyz - camPos.xyz;
+
+    float bladeAngle = blade.v0.w;
+    vec3 bitangent = vec3(-cos(bladeAngle), 0.0, sin(bladeAngle));
+    vec3 bladeNormal = normalize(cross(bitangent, blade.up.xyz));
+
+    // Orientation Cull
+    const float EPSILON = 0.01;
+    if (abs(dot(bladeNormal, normalize(-fromCam))) < EPSILON)
+        return true;
+
+    // Frustum Cull
+    vec4 m = 0.25 * blade.v0 + 0.5 * blade.v1 + 0.25 * blade.v2;
+
+    vec4 v0_clip = camera.proj * camera.view * vec4(blade.v0.xyz, 1.0);
+    vec3 v0_ndc  = v0_clip.xyz / v0_clip.w;
+
+    vec4 v2_clip = camera.proj * camera.view * vec4(blade.v2.xyz, 1.0);
+    vec3 v2_ndc  = v2_clip.xyz / v2_clip.w;
+
+    vec4 m_clip = camera.proj * camera.view * vec4(m.xyz, 1.0);
+    vec3 m_ndc  = m_clip.xyz / m_clip.w;
+
+    if (clipDiscard(v0_ndc) && clipDiscard(v2_ndc) && clipDiscard(m_ndc))
+        return true;
+
+    // Distance Cull
+    const float MAX_DIST = 25.0;
+
+    vec3 up = blade.up.xyz;
+    vec3 d_proj = fromCam - up*dot(fromCam, up); // fromCam projected onto plane
+    float dist = length(d_proj);
+
+    if (dist > MAX_DIST)
+        return true;
+
+    uint NUM_BUCKETS = 4; // n
+    float rhs = floor(float(NUM_BUCKETS) * (1.0 - dist/MAX_DIST));
+    float idModN = mod(gl_GlobalInvocationID.x, NUM_BUCKETS);
+
+    if (idModN > rhs)
+        return true;
+
     return false;
 }
 
