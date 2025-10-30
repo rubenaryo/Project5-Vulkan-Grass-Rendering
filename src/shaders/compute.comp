@@ -153,6 +153,10 @@ bool clipDiscard(vec3 ndc)
            ndc.z <  -0.1 || ndc.z > TOLERANCE;
 }
 
+#define ORIENTATION 1
+#define FRUSTUM 1
+#define DISTANCE 1
+
 bool cullBlade(Blade blade)
 {
     mat4 invView = inverse(camera.view);
@@ -164,9 +168,11 @@ bool cullBlade(Blade blade)
     vec3 bladeNormal = normalize(cross(bitangent, blade.up.xyz));
 
     // Orientation Cull
-    const float EPSILON = 0.01;
+    #if ORIENTATION
+    const float EPSILON = 0.1;
     if (abs(dot(bladeNormal, normalize(-fromCam))) < EPSILON)
         return true;
+    #endif
 
     // Frustum Cull
     vec4 m = 0.25 * blade.v0 + 0.5 * blade.v1 + 0.25 * blade.v2;
@@ -180,8 +186,10 @@ bool cullBlade(Blade blade)
     vec4 m_clip = camera.proj * camera.view * vec4(m.xyz, 1.0);
     vec3 m_ndc  = m_clip.xyz / m_clip.w;
 
+    #if FRUSTUM
     if (clipDiscard(v0_ndc) && clipDiscard(v2_ndc) && clipDiscard(m_ndc))
         return true;
+    #endif
 
     // Distance Cull
     const float MAX_DIST = 25.0;
@@ -189,7 +197,7 @@ bool cullBlade(Blade blade)
     vec3 up = blade.up.xyz;
     vec3 d_proj = fromCam - up*dot(fromCam, up); // fromCam projected onto plane
     float dist = length(d_proj);
-
+    #if DISTANCE
     if (dist > MAX_DIST)
         return true;
 
@@ -199,6 +207,7 @@ bool cullBlade(Blade blade)
 
     if (idModN > rhs)
         return true;
+    #endif
 
     return false;
 }
