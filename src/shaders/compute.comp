@@ -146,9 +146,11 @@ void applyForces(in out Blade blade)
 
 bool clipDiscard(vec3 ndc)
 {
-    return ndc.x < -1.0 || ndc.x > 1.0 ||
-           ndc.y < -1.0 || ndc.y > 1.0 ||
-           ndc.z <  0.0 || ndc.z > 1.0;
+    const float TOLERANCE = 1.1;
+
+    return ndc.x < -TOLERANCE || ndc.x > TOLERANCE ||
+           ndc.y < -TOLERANCE || ndc.y > TOLERANCE ||
+           ndc.z <  -0.1 || ndc.z > TOLERANCE;
 }
 
 bool cullBlade(Blade blade)
